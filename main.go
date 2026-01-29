@@ -1,12 +1,18 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
-func main() {
+
+func main()
+
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		io.WriteString(w, "Hello, Welcome to AiredSpace!\n")
 	})

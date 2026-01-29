@@ -1,4 +1,2 @@
-# airedspace
-
-
-Airedspace is a website for reviewing movies with your voice because it matters.
+## Welcome to Airedspace 
+To know more about the project and how to contribute please check out [Contributing.MD](./CONTRIBUTING.md)
