@@ -6,11 +6,13 @@ import (
 )
 
 type Handler struct {
-	service Service
+	service *Service
 }
 
 type SignUpRequest struct {
 	Username string `json:"username"`
+	Name     string `json:"name"`
+	LastName string `json:"lastname"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
@@ -32,7 +34,15 @@ func (h *Handler) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.service.CreateUser(CreateUserInput(user))
+	input := CreateUserInput{
+		Username: user.Username,
+		Password: user.Password,
+		Email:    user.Email,
+		Name:     user.Name,
+		LastName: user.LastName,
+	}
+
+	err = h.service.CreateUser(input)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

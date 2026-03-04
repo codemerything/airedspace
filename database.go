@@ -1,3 +1,5 @@
+// handles connection to the database
+
 package main
 
 import (
