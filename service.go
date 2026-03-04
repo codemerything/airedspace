@@ -5,14 +5,19 @@ package main
 import (
 	"context"
 	"errors"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type CreateUserInput struct {
-	Username string
-	Email    string
-	Password string
+	Username  string
+	Email     string
+	Password  string
+	Name      string
+	LastName  string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Service struct {
@@ -39,9 +44,13 @@ func (s *Service) CreateUser(input CreateUserInput) error {
 	}
 
 	user := &User{
-		Username: input.Username,
-		Email:    input.Email,
-		Password: string(hashedPassword),
+		Username:  input.Username,
+		Email:     input.Email,
+		Name:      input.Name,
+		LastName:  input.LastName,
+		Password:  string(hashedPassword),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	err = s.repo.CreateUser(context.TODO(), user)
