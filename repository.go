@@ -1,3 +1,5 @@
+// handles storage of data to database explicitly
+
 package main
 
 import (
@@ -11,9 +13,9 @@ type Repository struct {
 }
 
 func (r *Repository) CreateUser(ctx context.Context, u *User) error {
-	query := "INSERT INTO users (username,email,password) VALUES (?,?,?)"
+	query := "INSERT INTO users (username,name,lastname, email,password,created_at, updated_at) VALUES (?,?,?,?,?,?,?)"
 
-	res, err := r.db.ExecContext(ctx, query, u.Username, u.Email, u.Password)
+	res, err := r.db.ExecContext(ctx, query, u.Username, u.Name, u.LastName, u.Email, u.Password, u.CreatedAt, u.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to insert user: %w", err)
 	}
