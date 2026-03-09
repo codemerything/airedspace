@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 )
 
@@ -25,4 +26,20 @@ func (r *Repository) CreateUser(ctx context.Context, u *User) error {
 		return fmt.Errorf("failed to get userid: %w", err)
 	}
 	return nil
+}
+
+func (r *Repository) FetchUserByUsername(u *User) (User, error) {
+	var user User
+	query := "SELECT username, password, email FROM users WHERE username = ?"
+
+	err := r.db.QueryRow(query, u.Username).Scan(&user.Username, &user.Password, &user.Email)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return User{}, errors.New("User not found")
+		}
+		return User{}, err
+	}
+
+	return user, err
 }
