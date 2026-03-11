@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 )
 
@@ -21,13 +22,10 @@ func Welcome(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello world"))
 }
 
-func SignIn(w http.ResponseWriter, r *http.Request) {
-
-}
-
 func (h *Handler) SignUp(w http.ResponseWriter, r *http.Request) {
 	var user SignUpRequest
-	err := json.NewDecoder(r.Body).Decode(&user)
+	body, _ := io.ReadAll(r.Body)
+	err := json.Unmarshal(body, &user)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -48,10 +46,34 @@ func (h *Handler) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	b, err := json.Marshal(map[string]string{"message": "signup sucessful"})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "signup successful"})
-
+	w.Write(b)
 }
 
-func Movies(w http.ResponseWriter, r *http.Request) {}
+func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
+	var input LoginInput
+	body, _ := io.ReadAll(r.Body)
+	err := json.Unmarshal(body, &input)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	token, err := h.service.Login(input)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	b, err := json.Marshal(map[string]string{"token": token})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(b)
+}
