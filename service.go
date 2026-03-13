@@ -25,6 +25,21 @@ type LoginInput struct {
 	Password string
 }
 
+type Movie struct {
+	Title       string
+	Year        string
+	Image       string
+	Description string
+	TagLine     string
+	Director    []string
+	Cast        []string
+	MovieTime   int
+	Studio      []string
+	Country     []string
+	Language    []string
+	Genre       []string
+}
+
 type Service struct {
 	repo *Repository
 }
@@ -55,7 +70,7 @@ func generateToken(username string) (string, error) {
 	return tokenString, nil
 }
 
-// jwt token ends
+// jwt code ends
 
 func (s *Service) CreateUser(input CreateUserInput) error {
 	if input.Username == "" {
@@ -94,12 +109,13 @@ func (s *Service) CreateUser(input CreateUserInput) error {
 func (s *Service) Login(input LoginInput) (string, error) {
 	// check if user exists
 	//
-	user := &User{
-		Username: input.Username,
-	}
 
 	if input.Username == "" {
 		return "", errors.New("Insert email")
+	}
+
+	user := &User{
+		Username: input.Username,
 	}
 
 	if input.Password == "" {
@@ -121,4 +137,14 @@ func (s *Service) Login(input LoginInput) (string, error) {
 	}
 
 	return jwt, nil
+}
+
+func (s *Service) Search(input string) ([]Movie, error) {
+
+	// user searches for a name of movie
+	// check the database if that search already exists and give it to the user
+	// if not search the api and add that search to the user
+	// save that into the database (pessimistic approach)
+	// display to user
+
 }
