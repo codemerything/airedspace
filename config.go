@@ -11,6 +11,8 @@ type Config struct {
 	Port         int
 	DatabaseURL  string
 	Env          string
+	JWTSecret    string
+	TMDBKey      string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 }
@@ -24,8 +26,10 @@ func Load() (*Config, error) {
 
 	cfg := Config{
 		Port:         port,
-		DatabaseURL:  getEnv("DATABASE_URL", "root:fuckingmakeamess@tcp(localhost:3306)/airedspace"),
+		DatabaseURL:  requireEnv("DATABASE_URL"),
 		Env:          getEnv("ENV", "development"),
+		JWTSecret:    requireEnv("JWT"),
+		TMDBKey:      requireEnv("TMDB_API_KEY"),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
@@ -34,8 +38,16 @@ func Load() (*Config, error) {
 }
 
 func getEnv(key, fallback string) string {
-	if value := os.Getenv(key); value != " " {
+	if value := os.Getenv(key); value != "" {
 		return value
 	}
 	return fallback
+}
+
+func requireEnv(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		log.Fatalf("required environment variable %s is not set", key)
+	}
+	return value
 }
