@@ -43,3 +43,66 @@ func (r *Repository) FetchUserByUsername(u *User) (User, error) {
 
 	return user, err
 }
+
+func (r *Repository) CreateFilm(ctx context.Context, f *Films) (*Films, error) {
+	query := "INSERT INTO films (tmdb_id, title, tag_line, poster, foreground_poster, description, year) VALUES (?,?,?,?,?,?,?)"
+
+	res, err := r.db.ExecContext(ctx, query, f.TMDB_ID, f.Title, f.TagLine, f.Poster, f.ForegroundPoster, f.Description, f.Year)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert a film: %w", err)
+	}
+
+	f.FilmID, err = res.LastInsertId()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get filmid: %w", err)
+	}
+
+	return f, nil
+
+}
+
+func (r *Repository) SearchFilm(ctx context.Context, f *Films) ([]Films, error) {
+
+	var films []Films
+	query := `SELECT  tmdb_id, title, tag_line, poster, foreground_poster, description, year FROM films WHERE title LIKE ?`
+
+	rows, err := r.db.QueryContext(ctx, query, (f.Title + "%"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch row: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var tempFilms Films
+		if err := rows.Scan(&tempFilms.TMDB_ID, &tempFilms.Title, &tempFilms.TagLine, &tempFilms.Poster, &tempFilms.ForegroundPoster, &tempFilms.Description, &tempFilms.Year); err != nil {
+			return nil, fmt.Errorf("failed to scan films: %w", err)
+		}
+		films = append(films, tempFilms)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error fetching row: %w", err)
+	}
+
+	return films, nil
+}
+
+func (r *Repository) AddReview(ctx context.Context, rev *Review) (*Review, error) {
+	// taking the filmid userid audiourl stars tmdb_id rewatch and saving it into this table
+	// where are we getting the data from? doesnt matter all we are doing is inserting
+	//
+	query := "INSERT INTO reviews (film_id, user_id, audio_url, stars, tmdb_id, is_rewatch) VALUES (?,?,?,?,?,?)"
+
+	res, err := r.db.ExecContext(ctx, query, rev.FilmID, rev.UserID, rev.AudioURL, rev.Stars, rev.TMDB_ID, rev.IsRewatch)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert review %w", err)
+	}
+
+	rev.ID, err = res.LastInsertId()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get review id: %w", err)
+	}
+
+	return rev, nil
+}
