@@ -28,7 +28,7 @@ func Load() (*Config, error) {
 		Port:         port,
 		DatabaseURL:  requireEnv("DATABASE_URL"),
 		Env:          getEnv("ENV", "development"),
-		JWTSecret:    requireEnv("JWT"),
+		JWTSecret:    requireEnv("JWT_SECRET"),
 		TMDBKey:      requireEnv("TMDB_API_KEY"),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
