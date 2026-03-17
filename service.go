@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -26,22 +27,12 @@ type LoginInput struct {
 }
 
 type Movie struct {
-	Title       string
-	Year        string
-	Image       string
-	Description string
-	TagLine     string
-	Director    []string
-	Cast        []string
-	MovieTime   int
-	Studio      []string
-	Country     []string
-	Language    []string
-	Genre       []string
+	Title string
 }
 
 type Service struct {
 	repo *Repository
+	tmdb *TMDB
 }
 
 type Claims struct {
@@ -139,12 +130,43 @@ func (s *Service) Login(input LoginInput) (string, error) {
 	return jwt, nil
 }
 
-func (s *Service) Search(input string) ([]Movie, error) {
+func (s *Service) Search(input Movie) ([]Films, error) {
 
 	// user searches for a name of movie
 	// check the database if that search already exists and give it to the user
-	// if not search the api and add that search to the user
+	// if not search the api and add that search to the films
 	// save that into the database (pessimistic approach)
 	// display to user
+	//
+	// if input is empty then return error
+	if input.Title == "" {
+		return nil, errors.New("Empty input field")
+	}
 
+	title := &Films{
+		Title: input.Title,
+	}
+
+	fetchedFilm, err := s.repo.SearchFilm(context.Background(), title)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(fetchedFilm) == 0 {
+		id, err := s.tmdb.FetchMovieID(input.Title)
+		if err != nil {
+			return nil, errors.New("failed to fetch film")
+		}
+
+		details, err := s.tmdb.FetchFilmDetails(id)
+		fmt.Println(details.Year)
+		if err != nil {
+			return nil, errors.New("failed to fetch film details")
+		}
+		films, err := s.repo.CreateFilm(context.Background(), &details)
+		fmt.Println(err)
+		return []Films{*films}, nil
+	}
+
+	return fetchedFilm, nil
 }
