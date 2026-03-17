@@ -77,3 +77,28 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(b)
 }
+
+func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
+
+	title := r.URL.Query().Get("title")
+
+	if title == "" {
+		http.Error(w, "Query field cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	var searchInput = Movie{
+		Title: title,
+	}
+
+	films, err := h.service.Search(searchInput)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	b, err := json.Marshal(map[string]any{"films": films})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(b)
+}
