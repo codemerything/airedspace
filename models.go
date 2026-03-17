@@ -14,15 +14,15 @@ type User struct {
 }
 
 type Films struct {
-	FilmID           int64  `json:"id" db:"id"`
-	Title            string `json:"title" db:"title"`
-	TMDB_ID          string `json:"tmdb_id" db:"tmdb_id"`
-	Year             string `json:"year" db:"year"`
-	Poster           string `json:"image" db:"image"`
-	ForegroundPoster string `json:"foreground_poster" db:"foreground_poster"`
-	Description      string `json:"desc" db:"desc"`
-	TagLine          string `json:"tag_line" db:"tag_line"`
-	Time             string `json:"movie_time" db:"movie_time"`
+	FilmID         int64  `json:"id" db:"id"`
+	Title          string `json:"title" db:"title"`
+	TMDB_ID        int    `json:"tmdb_id" db:"tmdb_id"`
+	Year           string `json:"release_year" db:"release_year"`
+	Poster         string `json:"poster" db:"poster"`
+	BackdropPoster string `json:"foreground_poster" db:"foreground_poster"`
+	Description    string `json:"description" db:"description"`
+	TagLine        string `json:"tag_line" db:"tag_line"`
+	Time           int    `json:"runtime" db:"runtime"`
 }
 
 type Review struct {
