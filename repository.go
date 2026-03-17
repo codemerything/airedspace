@@ -45,9 +45,9 @@ func (r *Repository) FetchUserByUsername(u *User) (User, error) {
 }
 
 func (r *Repository) CreateFilm(ctx context.Context, f *Films) (*Films, error) {
-	query := "INSERT INTO films (tmdb_id, title, tag_line, poster, foreground_poster, description, year) VALUES (?,?,?,?,?,?,?)"
+	query := "INSERT INTO films (tmdb_id, title, tag_line, poster, foreground_poster, description, release_year, runtime) VALUES (?,?,?,?,?,?,?,?)"
 
-	res, err := r.db.ExecContext(ctx, query, f.TMDB_ID, f.Title, f.TagLine, f.Poster, f.ForegroundPoster, f.Description, f.Year)
+	res, err := r.db.ExecContext(ctx, query, f.TMDB_ID, f.Title, f.TagLine, f.Poster, f.BackdropPoster, f.Description, f.Year, f.Time)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert a film: %w", err)
 	}
@@ -64,7 +64,7 @@ func (r *Repository) CreateFilm(ctx context.Context, f *Films) (*Films, error) {
 func (r *Repository) SearchFilm(ctx context.Context, f *Films) ([]Films, error) {
 
 	var films []Films
-	query := `SELECT  tmdb_id, title, tag_line, poster, foreground_poster, description, year FROM films WHERE title LIKE ?`
+	query := `SELECT  tmdb_id, title, tag_line, poster, foreground_poster, description, release_year FROM films WHERE title LIKE ?`
 
 	rows, err := r.db.QueryContext(ctx, query, (f.Title + "%"))
 	if err != nil {
@@ -74,7 +74,7 @@ func (r *Repository) SearchFilm(ctx context.Context, f *Films) ([]Films, error) 
 
 	for rows.Next() {
 		var tempFilms Films
-		if err := rows.Scan(&tempFilms.TMDB_ID, &tempFilms.Title, &tempFilms.TagLine, &tempFilms.Poster, &tempFilms.ForegroundPoster, &tempFilms.Description, &tempFilms.Year); err != nil {
+		if err := rows.Scan(&tempFilms.TMDB_ID, &tempFilms.Title, &tempFilms.TagLine, &tempFilms.Poster, &tempFilms.BackdropPoster, &tempFilms.Description, &tempFilms.Year); err != nil {
 			return nil, fmt.Errorf("failed to scan films: %w", err)
 		}
 		films = append(films, tempFilms)
