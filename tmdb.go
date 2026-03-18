@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
+	"net/url"
 )
 
 type TMDB struct {
@@ -47,7 +47,18 @@ func NewTMDB(apiKey, baseURL string) *TMDB {
 // will extract the movies id
 
 func (t *TMDB) FetchMovieID(search string) (int, error) {
-	req, err := http.NewRequest("GET", t.baseURL+"search/movie?query="+search, nil)
+	//encode search string
+	endpoint, err := url.Parse(t.baseURL + "search/movie")
+	if err != nil {
+		return 0, fmt.Errorf("failed to fetch baseurl: %w", err)
+	}
+
+	params := url.Values{}
+	params.Add("query", search)
+	endpoint.RawQuery = params.Encode()
+
+	// request
+	req, err := http.NewRequest("GET", endpoint.String(), nil)
 	fmt.Print(req)
 	if err != nil {
 		return 0, fmt.Errorf("Failed request: %w", err)
@@ -77,9 +88,18 @@ func (t *TMDB) FetchMovieID(search string) (int, error) {
 }
 
 func (t *TMDB) FetchFilmDetails(id int) (Films, error) {
-	// start with the request
-	req, err := http.NewRequest("GET", t.baseURL+"movie/"+strconv.Itoa(id), nil)
+	// url with query parameter safer approach me thinks
+	endpoint, err := url.Parse(fmt.Sprintf("%s/movie/%d", t.baseURL, id))
+	if err != nil {
+		return Films{}, fmt.Errorf("invalid base url %w", err)
+	}
 
+	params := url.Values{}
+	params.Add("append_to_response", "credits")
+	endpoint.RawQuery = params.Encode()
+
+	// start with the request
+	req, err := http.NewRequest("GET", endpoint.String(), nil)
 	if err != nil {
 		return Films{}, errors.New("Request failed")
 	}
