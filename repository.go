@@ -64,7 +64,7 @@ func (r *Repository) CreateFilm(ctx context.Context, f *Films) (*Films, error) {
 func (r *Repository) SearchFilm(ctx context.Context, f *Films) ([]Films, error) {
 
 	var films []Films
-	query := `SELECT  tmdb_id, title, tag_line, poster, foreground_poster, description, release_year FROM films WHERE title LIKE ?`
+	query := `SELECT  tmdb_id, title, tag_line, poster, foreground_poster, description, release_year, runtime FROM films WHERE title LIKE ?`
 
 	rows, err := r.db.QueryContext(ctx, query, (f.Title + "%"))
 	if err != nil {
