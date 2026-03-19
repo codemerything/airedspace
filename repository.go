@@ -61,6 +61,22 @@ func (r *Repository) CreateFilm(ctx context.Context, f *Films) (*Films, error) {
 
 }
 
+func (r *Repository) CreatePerson(ctx context.Context, p *Persons) (*Persons, error) {
+	query := "INSERT INTO persons (id,tmdb_id, name) VALUES (?,?,?) ON DUPLICATE KEY UPDATE tmdb_id = tmdb_id, id = LAST_INSERT_ID(id) "
+
+	res, err := r.db.ExecContext(ctx, query, p.TMDB_ID, p.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert person to database", err)
+	}
+	p.ID, _ = res.LastInsertId()
+
+	return p, nil
+}
+
+func (r *Repository) CreateFilmCast(ctx context.Context, fc *FilmsCast) error {
+	query := "INSERT INTO films_cast (film_id, cast_id, character_name) VALUES (?,?,?) ON DUPLICATE KEY UPDATE cast_id"
+}
+
 func (r *Repository) SearchFilm(ctx context.Context, f *Films) ([]Films, error) {
 
 	var films []Films
@@ -91,17 +107,12 @@ func (r *Repository) AddReview(ctx context.Context, rev *Review) (*Review, error
 	// taking the filmid userid audiourl stars tmdb_id rewatch and saving it into this table
 	// where are we getting the data from? doesnt matter all we are doing is inserting
 	//
-	query := "INSERT INTO reviews (film_id, user_id, audio_url, stars, tmdb_id, is_rewatch) VALUES (?,?,?,?,?,?)"
+	query := "INSERT INTO reviews (id,film_id, user_id, audio_url, stars, tmdb_id, is_rewatch) VALUES (?,?,?,?,?,?,?)"
 
-	res, err := r.db.ExecContext(ctx, query, rev.FilmID, rev.UserID, rev.AudioURL, rev.Stars, rev.TMDB_ID, rev.IsRewatch)
-
+	rev.ID = randomHex(8)
+	_, err := r.db.ExecContext(ctx, query, rev.ID, rev.FilmID, rev.UserID, rev.AudioURL, rev.Stars, rev.TMDB_ID, rev.IsRewatch)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert review %w", err)
-	}
-
-	rev.ID, err = res.LastInsertId()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get review id: %w", err)
 	}
 
 	return rev, nil
