@@ -159,12 +159,50 @@ func (s *Service) Search(input Movie) ([]Films, error) {
 		}
 
 		details, err := s.tmdb.FetchFilmDetails(id)
-		fmt.Println(details.Year)
 		if err != nil {
 			return nil, errors.New("failed to fetch film details")
 		}
-		films, err := s.repo.CreateFilm(context.Background(), &details)
+
+		filmsdeets := Films{
+			Title:          details.Title,
+			TMDB_ID:        details.FilmID,
+			Year:           details.Year,
+			Poster:         details.PosterPath,
+			BackdropPoster: details.BackdropPath,
+			Description:    details.Description,
+			TagLine:        details.TagLine,
+			Time:           details.Time,
+		}
+
+		films, err := s.repo.CreateFilm(context.Background(), &filmsdeets)
+
 		fmt.Println(err)
+
+		// TODO: loop through each cast and save to database for persons and films cast
+		for _, value := range details.Credits.Cast {
+			persons := Persons{
+				TMDB_ID: value.CastID,
+				Name:    value.Name,
+			}
+
+			person, err := s.repo.CreatePerson(context.Background(), &persons)
+			if err != nil {
+				return nil, errors.New("failed to save person to database")
+			}
+
+			filmsCast := FilmsCast{
+				FilmID:        int(films.FilmID),
+				CastID:        int(person.ID),
+				CharacterName: value.CharacterName,
+			}
+
+			err = s.repo.CreateFilmCast(context.Background(), &filmsCast)
+			if err != nil {
+				return nil, errors.New("failed to save filmcast to table")
+			}
+
+		}
+
 		return []Films{*films}, nil
 	}
 
