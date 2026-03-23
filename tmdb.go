@@ -15,15 +15,30 @@ type TMDB struct {
 }
 
 type TMDBFilmDetails struct {
-	FilmID       int    `json:"id"`
-	Title        string `json:"original_title"`
-	TagLine      string `json:"tagline"`
-	Description  string `json:"overview"`
-	BackdropPath string `json:"backdrop_path"`
-	PosterPath   string `json:"poster_path"`
-	Year         string `json:"release_date"`
-	Time         int    `json:"runtime"`
-	Language     string `json:"original_language"`
+	FilmID       int         `json:"id"`
+	Title        string      `json:"original_title"`
+	TagLine      string      `json:"tagline"`
+	Description  string      `json:"overview"`
+	BackdropPath string      `json:"backdrop_path"`
+	PosterPath   string      `json:"poster_path"`
+	Year         string      `json:"release_date"`
+	Time         int         `json:"runtime"`
+	Language     string      `json:"original_language"`
+	Credits      TMDBCredits `json:"credits"`
+}
+
+type TMDBCastDetails struct {
+	CastID        int    `json:"id"`
+	Name          string `json:"name"`
+	CharacterName string `json:"character"`
+}
+type TMDBGenres struct {
+	Name string `json:"name"`
+}
+
+type TMDBCredits struct {
+	Cast   []TMDBCastDetails `json:"cast"`
+	Genres []TMDBGenres      `json:"genres"`
 }
 
 type TMDBResult struct {
@@ -87,11 +102,11 @@ func (t *TMDB) FetchMovieID(search string) (int, error) {
 	return data.Results[0].ID, nil
 }
 
-func (t *TMDB) FetchFilmDetails(id int) (Films, error) {
+func (t *TMDB) FetchFilmDetails(id int) (TMDBFilmDetails, error) {
 	// url with query parameter safer approach me thinks
 	endpoint, err := url.Parse(fmt.Sprintf("%s/movie/%d", t.baseURL, id))
 	if err != nil {
-		return Films{}, fmt.Errorf("invalid base url %w", err)
+		return TMDBFilmDetails{}, fmt.Errorf("invalid base url %w", err)
 	}
 
 	params := url.Values{}
@@ -101,13 +116,13 @@ func (t *TMDB) FetchFilmDetails(id int) (Films, error) {
 	// start with the request
 	req, err := http.NewRequest("GET", endpoint.String(), nil)
 	if err != nil {
-		return Films{}, errors.New("Request failed")
+		return TMDBFilmDetails{}, errors.New("Request failed")
 	}
 
 	req.Header.Set("Authorization", "Bearer "+t.apiKey)
 	resp, err := t.client.Do(req)
 	if err != nil {
-		return Films{}, fmt.Errorf("search failed: %w", err)
+		return TMDBFilmDetails{}, fmt.Errorf("search failed: %w", err)
 	}
 
 	defer resp.Body.Close()
@@ -115,18 +130,9 @@ func (t *TMDB) FetchFilmDetails(id int) (Films, error) {
 
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
-		return Films{}, fmt.Errorf("failed to decode response: %w", err)
+		return TMDBFilmDetails{}, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	return Films{
-		Title:          data.Title,
-		TMDB_ID:        data.FilmID,
-		Year:           data.Year,
-		Poster:         data.PosterPath,
-		BackdropPoster: data.BackdropPath,
-		Description:    data.Description,
-		TagLine:        data.TagLine,
-		Time:           data.Time,
-	}, nil
+	return data, nil
 
 }
