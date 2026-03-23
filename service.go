@@ -5,7 +5,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -139,6 +138,8 @@ func (s *Service) Search(input Movie) ([]Films, error) {
 	// display to user
 	//
 	// if input is empty then return error
+	//
+
 	if input.Title == "" {
 		return nil, errors.New("Empty input field")
 	}
@@ -155,7 +156,7 @@ func (s *Service) Search(input Movie) ([]Films, error) {
 	if len(fetchedFilm) == 0 {
 		id, err := s.tmdb.FetchMovieID(input.Title)
 		if err != nil {
-			return nil, errors.New("failed to fetch film")
+			return nil, err
 		}
 
 		details, err := s.tmdb.FetchFilmDetails(id)
@@ -173,10 +174,16 @@ func (s *Service) Search(input Movie) ([]Films, error) {
 			TagLine:        details.TagLine,
 			Time:           details.Time,
 		}
+		tx, err := s.repo.BeginTx(context.Background())
+		if err != nil {
+			return nil, err
+		}
 
-		films, err := s.repo.CreateFilm(context.Background(), &filmsdeets)
-
-		fmt.Println(err)
+		films, err := s.repo.CreateFilm(context.Background(), tx, &filmsdeets)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
 
 		// TODO: loop through each cast and save to database for persons and films cast
 		for _, value := range details.Credits.Cast {
@@ -185,25 +192,50 @@ func (s *Service) Search(input Movie) ([]Films, error) {
 				Name:    value.Name,
 			}
 
-			person, err := s.repo.CreatePerson(context.Background(), &persons)
+			person, err := s.repo.CreatePerson(context.Background(), tx, &persons)
 			if err != nil {
-				return nil, errors.New("failed to save person to database")
+				tx.Rollback()
+				return nil, err
 			}
 
 			filmsCast := FilmsCast{
-				FilmID:        int(films.FilmID),
-				CastID:        int(person.ID),
+				FilmID:        films.FilmID,
+				CastID:        person.ID,
 				CharacterName: value.CharacterName,
 			}
 
-			err = s.repo.CreateFilmCast(context.Background(), &filmsCast)
+			err = s.repo.CreateFilmCast(context.Background(), tx, &filmsCast)
 			if err != nil {
-				return nil, errors.New("failed to save filmcast to table")
+				tx.Rollback()
+				return nil, err
 			}
 
 		}
 
+		for _, value := range details.Credits.Genres {
+			genres := Genres{
+				Name: value.Name,
+			}
+
+			g, err := s.repo.CreateGenre(context.Background(), tx, &genres)
+			if err != nil {
+				tx.Rollback()
+				return nil, err
+			}
+
+			filmsGenre := FilmsGenre{
+				FilmID:  films.FilmID,
+				GenreID: g.Id,
+			}
+			err = s.repo.CreateFilmGenre(context.Background(), tx, &filmsGenre)
+			if err != nil {
+				tx.Rollback()
+				return nil, err
+			}
+		}
+		tx.Commit()
 		return []Films{*films}, nil
+
 	}
 
 	return fetchedFilm, nil
