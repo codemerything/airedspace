@@ -13,6 +13,11 @@ type Repository struct {
 	db *sql.DB
 }
 
+type DBTX interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+}
+
 func (r *Repository) CreateUser(ctx context.Context, u *User) error {
 	query := "INSERT INTO users (username,name,lastname, email,password,created_at, updated_at) VALUES (?,?,?,?,?,?,?)"
 
@@ -44,10 +49,14 @@ func (r *Repository) FetchUserByUsername(u *User) (User, error) {
 	return user, err
 }
 
-func (r *Repository) CreateFilm(ctx context.Context, f *Films) (*Films, error) {
+func (r *Repository) BeginTx(ctx context.Context) (*sql.Tx, error) {
+	return r.db.BeginTx(ctx, nil)
+}
+
+func (r *Repository) CreateFilm(ctx context.Context, db DBTX, f *Films) (*Films, error) {
 	query := "INSERT INTO films (tmdb_id, title, tag_line, poster, foreground_poster, description, release_year, runtime) VALUES (?,?,?,?,?,?,?,?)"
 
-	res, err := r.db.ExecContext(ctx, query, f.TMDB_ID, f.Title, f.TagLine, f.Poster, f.BackdropPoster, f.Description, f.Year, f.Time)
+	res, err := db.ExecContext(ctx, query, f.TMDB_ID, f.Title, f.TagLine, f.Poster, f.BackdropPoster, f.Description, f.Year, f.Time)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert a film: %w", err)
 	}
@@ -61,20 +70,48 @@ func (r *Repository) CreateFilm(ctx context.Context, f *Films) (*Films, error) {
 
 }
 
-func (r *Repository) CreatePerson(ctx context.Context, p *Persons) (*Persons, error) {
+func (r *Repository) CreatePerson(ctx context.Context, db DBTX, p *Persons) (*Persons, error) {
 	query := "INSERT INTO persons (id,tmdb_id, name) VALUES (?,?,?) ON DUPLICATE KEY UPDATE tmdb_id = tmdb_id, id = LAST_INSERT_ID(id) "
 
-	res, err := r.db.ExecContext(ctx, query, p.TMDB_ID, p.Name)
+	res, err := db.ExecContext(ctx, query, p.ID, p.TMDB_ID, p.Name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to insert person to database", err)
+		return nil, fmt.Errorf("failed to insert person to table: %w", err)
 	}
 	p.ID, _ = res.LastInsertId()
 
 	return p, nil
 }
 
-func (r *Repository) CreateFilmCast(ctx context.Context, fc *FilmsCast) error {
-	query := "INSERT INTO films_cast (film_id, cast_id, character_name) VALUES (?,?,?) ON DUPLICATE KEY UPDATE cast_id"
+func (r *Repository) CreateFilmCast(ctx context.Context, db DBTX, fc *FilmsCast) error {
+	query := "INSERT INTO films_cast (film_id, cast_id, character_name) VALUES (?,?,?)"
+
+	_, err := db.ExecContext(ctx, query, fc.FilmID, fc.CastID, fc.CharacterName)
+	if err != nil {
+		return fmt.Errorf("failed to insert into table: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) CreateGenre(ctx context.Context, db DBTX, g *Genres) (*Genres, error) {
+	query := "INSERT INTO genres (name) VALUES ?"
+
+	res, err := db.ExecContext(ctx, query, g.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert genre into table: %w", err)
+	}
+
+	g.Id, _ = res.LastInsertId()
+	return g, nil
+}
+
+func (r *Repository) CreateFilmGenre(ctx context.Context, db DBTX, g *FilmsGenre) error {
+	query := "INSERT INTO films_genre (film_id, genre_id) VALUES (?,?)"
+
+	_, err := db.ExecContext(ctx, query, g.FilmID, g.GenreID)
+	if err != nil {
+		return fmt.Errorf("failed to insert into films genre table: %w", err)
+	}
+	return nil
 }
 
 func (r *Repository) SearchFilm(ctx context.Context, f *Films) ([]Films, error) {
@@ -90,7 +127,7 @@ func (r *Repository) SearchFilm(ctx context.Context, f *Films) ([]Films, error) 
 
 	for rows.Next() {
 		var tempFilms Films
-		if err := rows.Scan(&tempFilms.TMDB_ID, &tempFilms.Title, &tempFilms.TagLine, &tempFilms.Poster, &tempFilms.BackdropPoster, &tempFilms.Description, &tempFilms.Year); err != nil {
+		if err := rows.Scan(&tempFilms.TMDB_ID, &tempFilms.Title, &tempFilms.TagLine, &tempFilms.Poster, &tempFilms.BackdropPoster, &tempFilms.Description, &tempFilms.Year, &tempFilms.Time); err != nil {
 			return nil, fmt.Errorf("failed to scan films: %w", err)
 		}
 		films = append(films, tempFilms)
