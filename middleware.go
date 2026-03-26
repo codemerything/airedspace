@@ -31,7 +31,9 @@ func AuthMiddleware(next http.Handler, jwtSecret string) http.Handler {
 
 		claims, _ := token.Claims.(jwt.MapClaims)
 		username := claims["username"].(string)
+		userID := claims["user_id"].(float64)
 		ctx := context.WithValue(r.Context(), "username", username)
+		ctx = context.WithValue(ctx, "user_id", userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
