@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"errors"
+	"math"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -239,4 +240,26 @@ func (s *Service) Search(input Movie) ([]Films, error) {
 	}
 
 	return fetchedFilm, nil
+}
+
+func (s *Service) SubmitReview(review Review) error {
+
+	if review.AudioURL == "" {
+		return errors.New("Invalid file for audio")
+	}
+
+	if review.Stars < 0.5 || review.Stars > 5.0 || math.Mod(review.Stars, 0.5) != 0 {
+		return errors.New("Wrong review format")
+	}
+
+	if review.FilmID == 0 {
+		return errors.New("Invalid filmid")
+	}
+
+	_, err := s.repo.AddReview(context.Background(), &review)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
