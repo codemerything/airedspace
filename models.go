@@ -25,12 +25,45 @@ type Films struct {
 	Time           int    `json:"runtime" db:"runtime"`
 }
 
+type Persons struct {
+	ID      int64  `json:"id" db:"id"`
+	TMDB_ID int    `json:"tmdb_id" db:"tmdb_id"`
+	Name    string `json:"name" db:"name"`
+}
+
+type Genres struct {
+	Id   int64  `json:"id" db:"db"`
+	Name string `json:"name" db:"name"`
+}
+
+type FilmsGenre struct {
+	FilmID  int64 `json:"film_id" db:"film_id"`
+	GenreID int64 `json:"genre_id" db:"genre_id"`
+}
+
+type Languages struct {
+	ID       int64  `json:"id" db:"id"`
+	Language string `json:"language" db:"language"`
+}
+
+type FilmLanguage struct {
+	FilmID     int `json:"film_id" db:"film_id"`
+	LanguageID int `json:"language_id" db:"language_id"`
+}
+
+type FilmsCast struct {
+	FilmID        int64  `json:"film_id" db:"film_id"`
+	CastID        int64  `json:"cast_id" db:"cast_id"`
+	CharacterName string `json:"character_name" db:"character_name"`
+}
+
 type Review struct {
-	ID        int64   `json:"id" db:"id"`
-	FilmID    int64   `json:"film_id" db:"film_id"`
-	UserID    int64   `json:"user_id" db:"user_id"`
-	AudioURL  string  `json:"audio_url" db:"audio_url"`
-	Stars     float64 `json:"stars" db:"stars"`
-	TMDB_ID   string  `json:"tmdb_id" db:"tmdb_id"`
-	IsRewatch int64   `json:"is_rewatch" db:"is_rewatch"`
+	ID          string  `json:"id" db:"id"`
+	FilmID      int64   `json:"film_id" db:"film_id"`
+	UserID      int64   `json:"user_id" db:"user_id"`
+	AudioURL    string  `json:"audio_url" db:"audio_url"`
+	Stars       float64 `json:"stars" db:"stars"`
+	TMDB_ID     string  `json:"tmdb_id" db:"tmdb_id"`
+	IsRewatch   int64   `json:"is_rewatch" db:"is_rewatch"`
+	ReviewLikes int64   `json:"review_likes" db:"review_likes"`
 }
