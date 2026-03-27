@@ -75,7 +75,15 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(map[string]string{"token": token})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    token,
+		MaxAge:   86400,
+		HttpOnly: true,
+		SameSite: http.SameSiteDefaultMode,
+	})
+
+	b, err := json.Marshal(map[string]string{"message": "user signed in successfully"})
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(b)

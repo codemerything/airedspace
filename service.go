@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math"
 	"time"
 
@@ -33,6 +34,7 @@ type Movie struct {
 type Service struct {
 	repo *Repository
 	tmdb *TMDB
+	cfg  *Config
 }
 
 type Claims struct {
@@ -41,18 +43,20 @@ type Claims struct {
 
 // how to generate a jwt token
 
-var mySecretKey = []byte("secretsecret")
+func generateToken(username string, userID float64, cfg *Config) (string, error) {
 
-func generateToken(username string) (string, error) {
 	claims := jwt.MapClaims{
 		"username": username,
+		"user_id":  userID,
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 		"iat":      time.Now().Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	tokenString, err := token.SignedString(mySecretKey)
+	fmt.Println("signing with secret:", string(cfg.JWTSecret))
+	tokenString, err := token.SignedString([]byte(cfg.JWTSecret))
+	fmt.Println("sign error:", err)
 
 	if err != nil {
 		return "", err
@@ -122,7 +126,7 @@ func (s *Service) Login(input LoginInput) (string, error) {
 		return "", errors.New("Invalid credentials")
 	}
 
-	jwt, err := generateToken(user.Username)
+	jwt, err := generateToken(fetchedUser.Username, float64(fetchedUser.UserID), s.cfg)
 	if err != nil {
 		return "", errors.New("Failed to generate JWT token")
 	}

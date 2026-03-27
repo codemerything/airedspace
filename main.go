@@ -35,18 +35,20 @@ func main() {
 	tmdb := NewTMDB(cfg.TMDBKey, "https://api.themoviedb.org/3/")
 	repo := &Repository{db: db.DB}
 	service := &Service{repo: repo,
-		tmdb: tmdb}
+		tmdb: tmdb,
+		cfg:  cfg}
 	h := &Handler{service: service}
 
 	mux := http.NewServeMux()
+
 	// public routes
 	mux.HandleFunc("GET /", Welcome)
 	mux.HandleFunc("POST /signin", h.SignIn)
 	mux.HandleFunc("POST /signup", h.SignUp)
-	mux.HandleFunc("GET /search", h.Search)
 
-	//protected routes
-	// mux.Handle("GET /feed", AuthMiddleware(h.Feed, cfg.JWTSecret))
+	// protected routes
+	mux.Handle("GET /search", AuthMiddleware(http.HandlerFunc(h.Search), cfg.JWTSecret))
+	mux.Handle("POST /submit-review", AuthMiddleware(http.HandlerFunc(h.SubmitReview), cfg.JWTSecret))
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),
