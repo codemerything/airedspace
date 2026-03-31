@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io"
 	"log"
@@ -23,20 +24,26 @@ type SignUpRequest struct {
 	Password string `json:"password"`
 }
 
-// func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Add("Server", "Go")
-// 	ts, err := template.ParseFiles("./templates/index.tmpl.html")
-// 	if err != nil {
-// 		log.Print(err.Error())
-// 		http.Error(w, "Internal server error", http.StatusInternalServerError)
-// 	}
+func (h *Handler) Welcome(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Server", "Go")
 
-// 	err = ts.Execute(w, nil)
-// 	if err != nil {
-// 		log.Print(err.Error())
-// 		http.Error(w, "Internal server error", http.StatusInternalServerError)
-// 	}
-// }
+	username := r.Context().Value("username")
+
+	files := []string{
+		"./templates/welcome.tmpl.html",
+		"./templates/base.tmpl.html",
+		"./templates/footer.partial.tmpl.html",
+	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	fmt.Println(username)
+	ts.ExecuteTemplate(w, "base", username)
+}
 
 func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
@@ -100,32 +107,65 @@ func (h *Handler) SignUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
-	var input LoginInput
-	body, _ := io.ReadAll(r.Body)
-	err := json.Unmarshal(body, &input)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+
+	if r.Method == "GET" {
+		if r.URL.Path != "/signin" {
+			http.NotFound(w, r)
+			return
+		}
+
+		files := []string{
+			"./templates/signin.tmpl.html",
+			"./templates/base.tmpl.html",
+			"./templates/footer.partial.tmpl.html",
+		}
+
+		ts, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+		}
+
+		ts.Execute(w, nil)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Internal server error", 500)
+		}
+
 	}
 
-	token, err := h.service.Login(input)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	if r.Method == "POST" {
+		//POST request
+		var input LoginInput
+		err := r.ParseForm()
+		if err != nil {
+			http.Error(w, "Unable to parse form", http.StatusBadRequest)
+			return
+		}
+
+		input.Username = r.FormValue("username")
+		input.Password = r.FormValue("password")
+
+		token, err := h.service.Login(input)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("<div id='error-message' style='color:red'>Invalid credentials. Try again</div>"))
+			return
+		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     "token",
+			Value:    token,
+			MaxAge:   86400,
+			HttpOnly: true,
+			SameSite: http.SameSiteDefaultMode,
+		})
+
+		w.Header().Set("HX-Redirect", "/welcome")
+		w.WriteHeader(http.StatusOK)
+
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "token",
-		Value:    token,
-		MaxAge:   86400,
-		HttpOnly: true,
-		SameSite: http.SameSiteDefaultMode,
-	})
-
-	b, err := json.Marshal(map[string]string{"message": "user signed in successfully"})
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(b)
 }
 
 func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {

@@ -41,8 +41,13 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	// create a fileserver which serves files out of the "./templates/static/" directory
+	fileServer := http.FileServer(http.Dir("./templates/static/"))
+
+	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+
 	// public routes
-	mux.HandleFunc("GET /", Welcome)
+	mux.HandleFunc("GET /{$}", h.Home)
 	mux.HandleFunc("POST /signin", h.SignIn)
 	mux.HandleFunc("POST /signup", h.SignUp)
 
