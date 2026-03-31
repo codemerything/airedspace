@@ -1,0 +1,30 @@
+{{define "base"}}
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>{{template "title" .}}</title>
+        <link rel="stylesheet" href="/static/css/styles.css" />
+    </head>
+    <body>
+        <header>
+            <h1 class="welcome"><a href="/"> airedspaces</a></h1>
+
+            <nav>
+                <a href="/signin">sign in</a>
+                <a href="/signup">create account</a><a href="/search">search</a>
+            </nav>
+        </header>
+
+        <section>{{template "body" .}}</section>
+
+        {{template "footer" .}}
+        <script
+            src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"
+            integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz"
+            crossorigin="anonymous"
+        ></script>
+    </body>
+</html>
+{{end}}

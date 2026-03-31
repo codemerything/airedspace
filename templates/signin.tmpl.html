@@ -1,0 +1,16 @@
+{{template "base"}} {{define "title"}} Sign in {{end}} {{define "body"}}
+
+<form
+    hx-post="/signin"
+    hx-target="#error-message"
+    hx-swap="innerHTML"
+    method="post"
+>
+    <label for="username">Username:</label><br />
+    <input type="text" id="username" name="username" />
+    <label for="password">Password:</label><br />
+    <input type="text" name="password" id="password" />
+    <input type="submit" value="Sign in" />
+</form>
+<div id="error-message"></div>
+{{end}}
