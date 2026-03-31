@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"html/template"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -21,8 +23,45 @@ type SignUpRequest struct {
 	Password string `json:"password"`
 }
 
-func Welcome(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello world"))
+// func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
+// 	w.Header().Add("Server", "Go")
+// 	ts, err := template.ParseFiles("./templates/index.tmpl.html")
+// 	if err != nil {
+// 		log.Print(err.Error())
+// 		http.Error(w, "Internal server error", http.StatusInternalServerError)
+// 	}
+
+// 	err = ts.Execute(w, nil)
+// 	if err != nil {
+// 		log.Print(err.Error())
+// 		http.Error(w, "Internal server error", http.StatusInternalServerError)
+// 	}
+// }
+
+func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+
+	files := []string{
+		"./templates/index.tmpl.html",
+		"./templates/base.tmpl.html",
+		"./templates/footer.partial.tmpl.html",
+	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	err = ts.Execute(w, nil)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal server error", 500)
+	}
 }
 
 func (h *Handler) SignUp(w http.ResponseWriter, r *http.Request) {
