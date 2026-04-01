@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"io"
 	"log"
@@ -24,14 +23,41 @@ type SignUpRequest struct {
 	Password string `json:"password"`
 }
 
-func (h *Handler) Welcome(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Server", "Go")
+type NavLink struct {
+	Name string
+	URL  string
+}
 
-	username := r.Context().Value("username")
+type TemplateData struct {
+	Nav      []NavLink
+	Username any
+	Films    []Films
+	Title    string
+}
+
+func (h *Handler) Welcome(w http.ResponseWriter, r *http.Request) {
+
+	data := TemplateData{
+		Username: r.Context().Value("username"),
+	}
+
+	if data.Username != nil {
+		data.Nav = []NavLink{
+			{"Search", "/search"},
+			{"Profile", "/profile"},
+			{"Logout", "/logout"},
+		}
+	} else {
+		data.Nav = []NavLink{
+			{"Sign in", "/signin"},
+			{"Create account", "/signup"},
+		}
+	}
 
 	files := []string{
-		"./templates/welcome.tmpl.html",
+		"./templates/index.tmpl.html",
 		"./templates/base.tmpl.html",
+		"./templates/nav.partial.tmpl.html",
 		"./templates/footer.partial.tmpl.html",
 	}
 
@@ -41,8 +67,7 @@ func (h *Handler) Welcome(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println(username)
-	ts.ExecuteTemplate(w, "base", username)
+	ts.ExecuteTemplate(w, "base", data)
 }
 
 func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
@@ -51,9 +76,27 @@ func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	data := TemplateData{
+		Username: r.Context().Value("username"),
+	}
+
+	if data.Username != nil {
+		data.Nav = []NavLink{
+			{"Search", "/search"},
+			{"Profile", "/profile"},
+			{"Logout", "/logout"},
+		}
+	} else {
+		data.Nav = []NavLink{
+			{"Sign in", "/signin"},
+			{"Create account", "/signup"},
+		}
+	}
+
 	files := []string{
 		"./templates/index.tmpl.html",
 		"./templates/base.tmpl.html",
+		"./templates/nav.partial.tmpl.html",
 		"./templates/footer.partial.tmpl.html",
 	}
 
@@ -64,7 +107,7 @@ func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = ts.Execute(w, nil)
+	err = ts.ExecuteTemplate(w, "base", data)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "Internal server error", 500)
@@ -114,9 +157,27 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		data := TemplateData{
+			Username: r.Context().Value("username"),
+		}
+
+		if data.Username != nil {
+			data.Nav = []NavLink{
+				{"Search", "/search"},
+				{"Profile", "/profile"},
+				{"Logout", "/logout"},
+			}
+		} else {
+			data.Nav = []NavLink{
+				{"Sign in", "/signin"},
+				{"Create account", "/signup"},
+			}
+		}
+
 		files := []string{
 			"./templates/signin.tmpl.html",
 			"./templates/base.tmpl.html",
+			"./templates/nav.partial.tmpl.html",
 			"./templates/footer.partial.tmpl.html",
 		}
 
@@ -168,17 +229,30 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+
+	cookie := &http.Cookie{
+		Name:   "token",
+		Path:   "/",
+		MaxAge: -1,
+	}
+
+	http.SetCookie(w, cookie)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+/*FILM RELATED HANDLERS */
 func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 
-	title := r.URL.Query().Get("title")
+	search := r.URL.Query().Get("search")
 
-	if title == "" {
+	if search == "" {
 		http.Error(w, "Query field cannot be empty", http.StatusBadRequest)
 		return
 	}
 
 	var searchInput = Movie{
-		Title: title,
+		Title: search,
 	}
 
 	films, err := h.service.Search(searchInput)
@@ -187,10 +261,34 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(map[string]any{"films": films})
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(b)
+	// b, err := json.Marshal(map[string]any{"films": films})
+	// w.Header().Set("Content-Type", "application/json")
+	// w.WriteHeader(http.StatusOK)
+	// w.Write(b)
+	data := TemplateData{
+		Films: films,
+		Title: search,
+	}
+
+	files := []string{
+		"./templates/results.tmpl.html",
+		"./templates/base.tmpl.html",
+		"./templates/nav.partial.tmpl.html",
+		"./templates/footer.partial.tmpl.html",
+	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	err = ts.ExecuteTemplate(w, "body", data)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal server error", 500)
+	}
 }
 
 func (h *Handler) SubmitReview(w http.ResponseWriter, r *http.Request) {
