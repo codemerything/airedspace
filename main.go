@@ -51,11 +51,12 @@ func main() {
 	mux.HandleFunc("POST /signin", h.SignIn)
 	mux.HandleFunc("GET /signin", h.SignIn)
 	mux.HandleFunc("POST /signup", h.SignUp)
+	mux.HandleFunc("GET /search", h.Search)
 
 	// protected routes
-	mux.Handle("GET /search", AuthMiddleware(http.HandlerFunc(h.Search), cfg.JWTSecret))
 	mux.Handle("GET /welcome", AuthMiddleware(http.HandlerFunc(h.Welcome), cfg.JWTSecret))
 	mux.Handle("POST /submit-review", AuthMiddleware(http.HandlerFunc(h.SubmitReview), cfg.JWTSecret))
+	mux.Handle("GET /logout", AuthMiddleware(http.HandlerFunc(h.Logout), cfg.JWTSecret))
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),
