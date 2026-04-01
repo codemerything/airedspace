@@ -1,0 +1,19 @@
+{{define "nav"}}
+<nav>
+    {{range .Nav}}
+    <a href="{{.URL}}">{{.Name}}</a>
+    {{end}}
+
+    <div>
+        <input type="search" name="search" id="search" />
+        <button
+            hx-get="/search"
+            hx-target="#target-div"
+            hx-swap="innerHTML"
+            hx-include="#search"
+        >
+            Search
+        </button>
+    </div>
+</nav>
+{{end}}

@@ -1,0 +1,17 @@
+{{define "title"}} Search results for {{.Title}} {{end}} {{define "body"}}
+<div>Showing matches for {{.Title}}</div>
+<hr />
+{{range .Films}}
+<div>
+    <a href=""
+        ><img
+            src="https://image.tmdb.org/t/p/w500/{{.Poster}}"
+            alt="{{.Title}} poster"
+    /></a>
+    <a href=""><h3>{{.Title}}</h3></a>
+    <p>{{.Description}}</p>
+    <p>{{.Year}}</p>
+</div>
+{{else}}
+<p>No results found</p>
+{{end}} {{end}}

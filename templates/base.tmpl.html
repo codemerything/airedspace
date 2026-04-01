@@ -8,16 +8,8 @@
         <link rel="stylesheet" href="/static/css/styles.css" />
     </head>
     <body>
-        <header>
-            <h1 class="welcome"><a href="/"> airedspaces</a></h1>
-
-            <nav>
-                <a href="/signin">sign in</a>
-                <a href="/signup">create account</a><a href="/search">search</a>
-            </nav>
-        </header>
-
-        <section>{{template "body" .}}</section>
+        <header>{{template "nav" .}}</header>
+        <section id="target-div">{{template "body" .}}</section>
 
         {{template "footer" .}}
         <script

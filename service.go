@@ -246,6 +246,10 @@ func (s *Service) Search(input Movie) ([]Films, error) {
 	return fetchedFilm, nil
 }
 
+func (s *Service) SearchBySlug(input string) (Films, error) {
+
+}
+
 func (s *Service) SubmitReview(review Review) error {
 
 	if review.AudioURL == "" {
