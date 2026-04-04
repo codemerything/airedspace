@@ -54,9 +54,16 @@ func (r *Repository) BeginTx(ctx context.Context) (*sql.Tx, error) {
 }
 
 func (r *Repository) CreateFilm(ctx context.Context, db DBTX, f *Films) (*Films, error) {
-	query := "INSERT INTO films (tmdb_id, title, tag_line, poster, foreground_poster, description, release_year, runtime) VALUES (?,?,?,?,?,?,?,?)"
+	query := "INSERT INTO films (tmdb_id, title, tag_line, poster, foreground_poster, description, release_year, runtime, slug) VALUES (?,?,?,?,?,?,?,?,?)"
 
-	res, err := db.ExecContext(ctx, query, f.TMDB_ID, f.Title, f.TagLine, f.Poster, f.BackdropPoster, f.Description, f.Year, f.Time)
+	slug := generateSlug(f.Title, f.Year, func(s string) bool {
+		exists, err := r.CheckSlug(s)
+		if err != nil {
+			return true
+		}
+		return exists
+	})
+	res, err := db.ExecContext(ctx, query, f.TMDB_ID, f.Title, f.TagLine, f.Poster, f.BackdropPoster, f.Description, f.Year, f.Time, slug)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert a film: %w", err)
 	}
@@ -117,7 +124,8 @@ func (r *Repository) CreateFilmGenre(ctx context.Context, db DBTX, g *FilmsGenre
 func (r *Repository) SearchFilm(ctx context.Context, f *Films) ([]Films, error) {
 
 	var films []Films
-	query := `SELECT  tmdb_id, title, tag_line, poster, foreground_poster, description, release_year, runtime FROM films WHERE title LIKE ?`
+	/*note_to_self: used join to add two tables together to display that information */
+	query := `SELECT  tmdb_id, title, tag_line, poster, foreground_poster, description, release_year, runtime FROM films LEFT JOIN films_crew ON films.film_id=films_crew.film_id WHERE title LIKE ?`
 
 	rows, err := r.db.QueryContext(ctx, query, (f.Title + "%"))
 	if err != nil {
@@ -127,7 +135,9 @@ func (r *Repository) SearchFilm(ctx context.Context, f *Films) ([]Films, error) 
 
 	for rows.Next() {
 		var tempFilms Films
-		if err := rows.Scan(&tempFilms.TMDB_ID, &tempFilms.Title, &tempFilms.TagLine, &tempFilms.Poster, &tempFilms.BackdropPoster, &tempFilms.Description, &tempFilms.Year, &tempFilms.Time); err != nil {
+
+		/*note_to_self: used join to add two tables together to display that information */
+		if err := rows.Scan(&tempFilms.TMDB_ID, &tempFilms.Title, &tempFilms.TagLine, &tempFilms.Poster, &tempFilms.BackdropPoster, &tempFilms.Description, &tempFilms.Year, &tempFilms.Time, &tempFilms.Director); err != nil {
 			return nil, fmt.Errorf("failed to scan films: %w", err)
 		}
 		films = append(films, tempFilms)
@@ -139,6 +149,34 @@ func (r *Repository) SearchFilm(ctx context.Context, f *Films) ([]Films, error) 
 
 	return films, nil
 }
+
+func (r *Repository) CheckSlug(slug string) (bool, error) {
+
+	var film Films
+	query := "SELECT slug from films WHERE slug = ?"
+
+	err := r.db.QueryRow(query, slug).Scan(&film.Slug)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
+/* func (r *Repository) CheckSlug(slug string) (bool, error) {
+	var exists bool
+
+	query := "SELECT EXISTS(SELECT 1 FROM films WHERE slug = ?)"
+	err := r.db.QueryRow(query, slug).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}*/
 
 func (r *Repository) AddReview(ctx context.Context, rev *Review) (*Review, error) {
 	// taking the filmid userid audiourl stars tmdb_id rewatch and saving it into this table
