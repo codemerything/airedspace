@@ -51,6 +51,8 @@ func (h *Handler) Welcome(w http.ResponseWriter, r *http.Request) {
 		data.Nav = []NavLink{
 			{"Sign in", "/signin"},
 			{"Create account", "/signup"},
+			{"Films", "/films"},
+			{"Members", "/members"},
 		}
 	}
 
@@ -90,6 +92,8 @@ func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
 		data.Nav = []NavLink{
 			{"Sign in", "/signin"},
 			{"Create account", "/signup"},
+			{"Films", "/films"},
+			{"Members", "/members"},
 		}
 	}
 
@@ -266,8 +270,24 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	// w.WriteHeader(http.StatusOK)
 	// w.Write(b)
 	data := TemplateData{
-		Films: films,
-		Title: search,
+		Films:    films,
+		Title:    search,
+		Username: r.Context().Value("username"),
+	}
+
+	if data.Username != nil {
+		data.Nav = []NavLink{
+			{"Search", "/search"},
+			{"Profile", "/profile"},
+			{"Logout", "/logout"},
+		}
+	} else {
+		data.Nav = []NavLink{
+			{"Sign in", "/signin"},
+			{"Create account", "/signup"},
+			{"Films", "/films"},
+			{"Members", "/members"},
+		}
 	}
 
 	files := []string{
@@ -284,7 +304,7 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = ts.ExecuteTemplate(w, "body", data)
+	err = ts.ExecuteTemplate(w, "base", data)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "Internal server error", 500)
