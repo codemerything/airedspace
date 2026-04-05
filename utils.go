@@ -13,13 +13,16 @@ func randomHex(n int) string {
 	return hex.EncodeToString(b)[:n]
 }
 
+func generateSlug(str string, year string, check func(string) bool) string {
 
-func generateSlug(str string, year int) string {
 	slug := strings.ToLower(str)
 	slug = strings.ReplaceAll(slug, ":", "")
 	slug = strings.ReplaceAll(slug, " ", "-")
 	slug = strings.ReplaceAll(slug, "/", "-")
 
-	return fmt.Sprintf("%s-%d", slug, year)
-}return fmt.Sprintf("%s-%d", slug, year)
+	if !check(slug) {
+		return slug
+	}
+	return fmt.Sprintf("%s-%s", slug, year)
+
 }
