@@ -23,6 +23,8 @@ type Films struct {
 	Description    string `json:"description" db:"description"`
 	TagLine        string `json:"tag_line" db:"tag_line"`
 	Time           int    `json:"runtime" db:"runtime"`
+	Slug           string `json:"slug" db:"slug"`
+	Director       string `json:"director" db:"job"`
 }
 
 type Persons struct {
