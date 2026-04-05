@@ -1,5 +1,23 @@
-{{template "base" .}} {{define "title"}} Home {{end}} {{define "body"}}
-<h2 class="welcome">Airedspace welcome</h2>
-<p>There's nothing yet to see!</p>
-
+{{template "base" .}} {{define "title"}} Home {{end}} {{define "bodyClass"}}page-home{{end}} {{define "body"}}
+<div class="home-page-hero-backdrop-wrap">
+    <div class="show-backdrop-container">
+        <img src="/static/img/backdrop.jpg" alt="" loading="lazy" />
+    </div>
+    <div class="show-backdrop-image-gradient"></div>
+    <div class="backdrop-metadata">
+        <a href="/film/project-hail-mary">
+            <h1>Project Hail Mary</h1>
+            <p>(2026)</p>
+        </a>
+    </div>
+</div>
+<div class="home-page-hero-spacer">
+    <div class="homepage-welcome">
+        <h2>An opinionated way to track films<br>
+            Your voice can be heard now.
+            <br>
+            Control it however you want.
+        </h2>
+    </div>
+</div>
 {{end}}
